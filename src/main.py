@@ -1,22 +1,38 @@
 import json
 import urllib.request
 import urllib.error
+from datetime import datetime
+import argparse
+import sys
 
 def main():
+    parser = argparse.ArgumentParser(description="Send JSON payload to server")
+    parser.add_argument('--topic', default='topicB')
+    parser.add_argument('--key', default='titles')
+    parser.add_argument('--value', default='quit!')
+    parser.add_argument('--url', default='http://localhost:8000/')
+    parser.add_argument('--dry-run', action='store_true', help='Print JSON and exit without sending')
+    args = parser.parse_args()
+
     req_data = {
-        "topic": "topicA",
-        "key": "test-key",
-        "value": "this is test value",
-        "timestamp": "2020-07-14 22:48:00.345678"
+        "topic": args.topic,
+        "key": args.key,
+        "value": args.value,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
     }
 
-    url = "http://localhost:8000/"
-    
     data = json.dumps(req_data).encode('utf-8')
-    
+
+    if args.dry_run:
+        print("Dry run: prepared JSON:")
+        print(json.dumps(req_data, ensure_ascii=False, indent=2))
+        return
+
+    url = args.url
+
     req = urllib.request.Request(
-        url, 
-        data=data, 
+        url,
+        data=data,
         headers={'content-type': 'application/json'},
         method='POST'
     )
@@ -25,7 +41,7 @@ def main():
         with urllib.request.urlopen(req) as response:
             status = response.getcode()
             if status == 200:
-                print("send data successfly!")
+                print("send data successfully!")
             else:
                 print(status)
                 
