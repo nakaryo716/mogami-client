@@ -1,9 +1,8 @@
-import json
-import urllib.request
-import urllib.error
-from datetime import datetime
 import argparse
-import sys
+import json
+import urllib.error
+from lib import Client
+
 
 def main():
     parser = argparse.ArgumentParser(description="Send JSON payload to server")
@@ -14,39 +13,20 @@ def main():
     parser.add_argument('--dry-run', action='store_true', help='Print JSON and exit without sending')
     args = parser.parse_args()
 
-    req_data = {
-        "topic": args.topic,
-        "key": args.key,
-        "value": args.value,
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-    }
-
-    data = json.dumps(req_data).encode('utf-8')
+    client = Client(url=args.url)
 
     if args.dry_run:
+        payload = client.post(args.topic, args.key, args.value, dry_run=True)
         print("Dry run: prepared JSON:")
-        print(json.dumps(req_data, ensure_ascii=False, indent=2))
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
         return
 
-    url = args.url
-
-    req = urllib.request.Request(
-        url,
-        data=data,
-        headers={'content-type': 'application/json'},
-        method='POST'
-    )
-
     try:
-        with urllib.request.urlopen(req) as response:
-            status = response.getcode()
-            if status == 200:
-                print("send data successfully!")
-            else:
-                print(status)
-                
-    except urllib.error.HTTPError as e:
-        print(e.code)
+        status = client.post(args.topic, args.key, args.value, dry_run=False)
+        if status == 200:
+            print("send data successfully!")
+        else:
+            print(status)
     except urllib.error.URLError as e:
         print(f"Failed to reach server: {e.reason}")
 
